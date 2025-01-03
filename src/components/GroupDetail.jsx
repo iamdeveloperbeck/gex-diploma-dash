@@ -89,7 +89,7 @@ export default function GroupDetail() {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-medium text-gray-900">
-                      {result.name}
+                      {result.name} {result.surname}
                     </h2>
                     <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-sm font-medium">
                       {result.grade}
