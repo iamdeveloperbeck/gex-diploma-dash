@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { onSnapshot, collection } from "firebase/firestore";
+import { onSnapshot, collection, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { Link, useParams } from "react-router-dom";
 import { db } from "../data/firebase";
 
 export default function GroupDetail() {
   const { id } = useParams();
   const [results, setResults] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ id: "", name: "", score: "", grade: "" });
 
   useEffect(() => {
-    const results = onSnapshot(collection(db, "results"), (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, "results"), (snapshot) => {
       const resultList = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -18,8 +20,49 @@ export default function GroupDetail() {
       setResults(newResult);
     });
 
-    return () => results();
+    return () => unsubscribe();
   }, [id]);
+
+  const handleEditClick = (result) => {
+    setEditData({
+      id: result.id,
+      name: result.name,
+      score: result.score,
+      grade: result.grade,
+    });
+    setIsEditing(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleEditSave = async () => {
+    try {
+      const resultDoc = doc(db, "results", editData.id);
+      await updateDoc(resultDoc, {
+        name: editData.name,
+        score: parseInt(editData.score, 10),
+        grade: parseInt(editData.grade, 10),
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Ma'lumotni yangilashda xatolik:", error);
+    }
+  };
+
+  const handleDelete = async (resultId) => {
+    try {
+      const resultDoc = doc(db, "results", resultId);
+      await deleteDoc(resultDoc);
+    } catch (error) {
+      console.error("Ma'lumotni o'chirishda xatolik:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -41,7 +84,7 @@ export default function GroupDetail() {
             {results.map((result) => (
               <div 
                 key={result.id}
-                className="p-6 hover:bg-gray-50 transition-colors duration-200"
+                className="p-6 hover:bg-gray-50 transition-colors duration-200 flex justify-between items-center"
               >
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
@@ -56,6 +99,20 @@ export default function GroupDetail() {
                     {result.group}
                   </p>
                 </div>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => handleEditClick(result)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(result.id)}
+                    className="text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
 
@@ -67,6 +124,55 @@ export default function GroupDetail() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-lg font-bold mb-4">Ma'lumotni tahrirlash</h2>
+            <div className="flex flex-col gap-4">
+              <input
+                type="text"
+                name="name"
+                value={editData.name}
+                onChange={handleEditChange}
+                className="border rounded-lg px-3 py-2"
+                placeholder="Ism"
+              />
+              <input
+                type="number"
+                name="score"
+                value={editData.score}
+                onChange={handleEditChange}
+                className="border rounded-lg px-3 py-2"
+                placeholder="Baholar"
+              />
+              <input
+                type="number"
+                name="grade"
+                value={editData.grade}
+                onChange={handleEditChange}
+                className="border rounded-lg px-3 py-2"
+                placeholder="Yakuniy baho"
+              />
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  onClick={handleEditSave}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Saqlash
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
