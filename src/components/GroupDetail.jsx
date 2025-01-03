@@ -4,10 +4,11 @@ import { Link, useParams } from "react-router-dom";
 import { db } from "../data/firebase";
 
 export default function GroupDetail() {
+  const private_secret_key = "12345678"
   const { id } = useParams();
   const [results, setResults] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ id: "", name: "", score: "", grade: "" });
+  const [editData, setEditData] = useState({ id: "", name: "", score: "", grade: "", secret_key: "" });
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "results"), (snapshot) => {
@@ -43,12 +44,16 @@ export default function GroupDetail() {
 
   const handleEditSave = async () => {
     try {
-      const resultDoc = doc(db, "results", editData.id);
-      await updateDoc(resultDoc, {
-        name: editData.name,
-        score: parseInt(editData.score, 10),
-        grade: parseInt(editData.grade, 10),
-      });
+      if (editData.secret_key === private_secret_key) {
+        const resultDoc = doc(db, "results", editData.id);
+        await updateDoc(resultDoc, {
+          name: editData.name,
+          score: parseInt(editData.score, 10),
+          grade: parseInt(editData.grade, 10),
+        });
+      }else {
+        window.alert("Pashol naxxuy .... Parol noto'g'ri")
+      }
       setIsEditing(false);
     } catch (error) {
       console.error("Ma'lumotni yangilashda xatolik:", error);
@@ -154,6 +159,13 @@ export default function GroupDetail() {
                 onChange={handleEditChange}
                 className="border rounded-lg px-3 py-2"
                 placeholder="Yakuniy baho"
+              />
+              <input
+                type="text"
+                name="secret_key"
+                onChange={handleEditChange}
+                className="border rounded-lg px-3 py-2"
+                placeholder="Secret_key"
               />
               <div className="flex justify-end gap-4">
                 <button
