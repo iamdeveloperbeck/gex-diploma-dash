@@ -1,5 +1,3 @@
-"use client"
-
 import React, { useEffect, useState, useRef } from "react"
 import { onSnapshot, collection } from "firebase/firestore"
 import { Link, useParams } from "react-router-dom"
@@ -18,6 +16,7 @@ import {
   XCircle,
   BarChart3,
   Calendar,
+  ArrowRight,
 } from "lucide-react"
 
 export default function GroupDetail() {
@@ -83,7 +82,6 @@ export default function GroupDetail() {
         await html2pdf().set(opt).from(ref.current).save()
       } catch (error) {
         console.error("PDF yaratishda xatolik:", error)
-        // questionsLimit "100"
         alert("PDF yaratishda xatolik yuz berdi.")
       }
     } else {
@@ -134,29 +132,57 @@ export default function GroupDetail() {
       answerSheetRefs.current[result.id] = React.createRef()
     }
 
-    const getBubble = (label, selected) => {
-      const correct = selected.correctAnswer
-      const base = "w-3 h-3 flex items-center justify-center rounded-full border border-black"
+    // Yetishmayotgan savollarni to'ldirish uchun to'liq javoblar massivini yaratish
+    const expectedTotalQuestions = result.questionsLimit || result.totalQuestions || 100
+    const actualAnswers = result.answers || []
 
-      if (selected.selectedAnswer === label && selected.selectedAnswer === correct) {
-        return `${base} bg-black`
+    // To'liq javoblar massivini yaratish
+    const completeAnswers = []
+    for (let i = 0; i < expectedTotalQuestions; i++) {
+      if (i < actualAnswers.length) {
+        // Mavjud javob
+        completeAnswers.push(actualAnswers[i])
+      } else {
+        // Yetishmayotgan javob uchun bo'sh element
+        completeAnswers.push({
+          question: `Savol ${i + 1}`,
+          selectedAnswer: null,
+          correctAnswer: "A", // Default qiymat
+          isCorrect: false,
+          section: "Javob berilmagan",
+        })
       }
-      if (selected.selectedAnswer === label && selected.selectedAnswer !== correct) {
-        return `${base} bg-red-500 text-white border-red-500`
-      }
-      return `${base} bg-white text-gray-800 border-gray-400`
     }
 
-    const totalQuestions = result.answers?.length || 0
-    const correctCount = result.answers?.reduce((count, answer) => {
+    const getBubble = (label, selected) => {
+      // Agar javob berilmagan bo'lsa
+      if (!selected.selectedAnswer) {
+        return "w-3 h-3 flex items-center justify-center rounded-full border border-black bg-white"
+      }
+
+      // To'g'ri javob va to'g'ri tanlangan
+      if (selected.selectedAnswer === label && selected.isCorrect) {
+        return "w-3 h-3 flex items-center justify-center rounded-full border border-black bg-black"
+      }
+
+      // Noto'g'ri javob tanlangan
+      if (selected.selectedAnswer === label && !selected.isCorrect) {
+        return "w-3 h-3 flex items-center justify-center rounded-full border border-red-500 bg-red-500"
+      }
+
+      // Boshqa variantlar
+      return "w-3 h-3 flex items-center justify-center rounded-full border border-black bg-white"
+    }
+
+    const actualAnsweredQuestions = actualAnswers.length
+    const correctCount = actualAnswers.reduce((count, answer) => {
       return answer.isCorrect ? count + 1 : count
     }, 0)
-    const incorrectCount = totalQuestions - correctCount
-    console.log(correctCount)
+    const actualIncorrectCount = actualAnsweredQuestions - correctCount
+    const unansweredCount = expectedTotalQuestions - actualAnsweredQuestions
+    const totalIncorrectCount = actualIncorrectCount + unansweredCount // Noto'g'ri + javob berilmagan
 
-    const grade = result.grade || 2 // Bazadan olingan baho, agar yo'q bo'lsa 2
-
-    console.log(result)
+    const grade = result.grade || 2
 
     return (
       <div ref={answerSheetRefs.current[result.id]} className="bg-white p-4">
@@ -176,7 +202,7 @@ export default function GroupDetail() {
             ))}
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-4 gap-2">
-            {result.answers?.map((selected, index) => {
+            {completeAnswers.map((selected, index) => {
               return (
                 <div key={index} className="flex items-center gap-2">
                   <p className="text-[10px] font-medium mb-1">{index + 1 < 10 ? `0${index + 1}` : index + 1}</p>
@@ -199,7 +225,7 @@ export default function GroupDetail() {
               To'g'ri javoblar: <strong>{correctCount}</strong>
             </p>
             <p className="text-[16px]">
-              Noto'g'ri javoblar: <strong>{incorrectCount}</strong>
+              Noto'g'ri javoblar: <strong>{totalIncorrectCount}</strong>
             </p>
             <p className="text-[16px]">
               Baho: <strong>{grade}</strong>
@@ -230,6 +256,13 @@ export default function GroupDetail() {
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-medium">Ortga qaytish</span>
+              </Link>
+              <Link
+                to="/stdmngt"
+                className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                <span className="font-medium">Tahrirlash</span>
+                <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
             <div className="flex items-center space-x-3">
