@@ -8,6 +8,7 @@ import GroupDetail from './components/GroupDetail';
 import AnswerSheetPDF from './components/AnswerSheetPDF';
 import AddSection from './components/AddSection';
 import ViewTests from './components/ViewTests';
+import StudentManagement from './components/StudentManagement';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/answersheet/:id" element={<AnswerSheetPDF />} />
         <Route path="/addsection" element={<AddSection />} />
         <Route path="/viewtest" element={<ViewTests />} />
+        <Route path="/stdmngt" element={<StudentManagement />} />
       </Routes>
     </>
   );
