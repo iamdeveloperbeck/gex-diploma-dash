@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useEffect, useState, useRef } from "react"
 import { onSnapshot, collection } from "firebase/firestore"
 import { Link, useParams } from "react-router-dom"
@@ -162,7 +164,7 @@ export default function GroupDetail() {
 
       // To'g'ri javob va to'g'ri tanlangan
       if (selected.selectedAnswer === label && selected.isCorrect) {
-        return "w-3 h-3 flex items-center justify-center rounded-full border border-black bg-black"
+        return "w-3 h-3 flex items-center justify-center rounded-full border border-green-600 bg-green-600"
       }
 
       // Noto'g'ri javob tanlangan
